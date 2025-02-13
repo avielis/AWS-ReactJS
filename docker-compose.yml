@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  react-app:
+    build: .
+    ports:
+      - "3000:3000"  # Mappe le port 3000 du conteneur au port 3000 de l'hôte
+    volumes:
+      - .:/app  # Mappe le répertoire local au répertoire /app dans le conteneur
+    environment:
+      - NODE_ENV=production
+    command: npm start  # Démarre l'application React avec npm

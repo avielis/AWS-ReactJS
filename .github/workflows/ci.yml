@@ -1,0 +1,43 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main  # Se déclenche uniquement sur la branche 'main'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest  # Utilisation d'un runner Ubuntu
+
+    steps:
+      # Étape 1 : Checkout du code depuis GitHub
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # Étape 2 : Installer OpenSSH client
+      - name: Install OpenSSH client
+        run: sudo apt-get install -y openssh-client
+
+      # Étape 3 : Ajouter la clé SSH privée pour se connecter à l'instance EC2
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+      # Étape 4 : Ajouter l'hôte EC2 aux known_hosts
+      - name: Add EC2 to known hosts
+        run: ssh-keyscan -H 16.171.18.25 >> ~/.ssh/known_hosts
+
+      # Étape 5 : Déploiement sur EC2 (git pull)
+      - name: Deploy to EC2
+        run: |
+          ssh -i ~/.ssh/id_rsa ubuntu@16.171.18.25 'cd /home/aviel/AWS-ReactJS && git pull origin main'
+
+      # Étape 6 : Nettoyage de la clé SSH
+      - name: Clean up SSH key
+        run: rm -rf ~/.ssh
+
+
+
+
