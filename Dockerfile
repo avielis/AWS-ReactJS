@@ -23,6 +23,6 @@ RUN npm install -g serve
 # Exposer le bon port
 EXPOSE 3000
 
- Lancer l'application en mode production
+# Lancer l'application en mode production
 #CMD ["serve", "-s", ".", "-l", "3000"]
 CMD ["npm", "start"]
