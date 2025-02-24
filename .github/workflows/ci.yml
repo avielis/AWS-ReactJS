@@ -1,43 +1,55 @@
-name: Deploy to EC2
+name: Deploy to AWS and EC2
 
 on:
   push:
     branches:
-      - main  # Se déclenche uniquement sur la branche 'main'
+      - main  # Déclenche la pipeline uniquement sur un push sur la branche main
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest  # Utilisation d'un runner Ubuntu
+    runs-on: ubuntu-latest
 
     steps:
-      # Étape 1 : Checkout du code depuis GitHub
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-      # Étape 2 : Installer OpenSSH client
-      - name: Install OpenSSH client
-        run: sudo apt-get install -y openssh-client
+        #- name: Mettre à jour les paquets
+        #run: sudo apt update && sudo apt upgrade -y
 
-      # Étape 3 : Ajouter la clé SSH privée pour se connecter à l'instance EC2
-      - name: Set up SSH key
+      - name: Installer OpenSSH Client
+        run: sudo apt install -y openssh-client
+
+      - name: Ajouter la clé privée SSH
         run: |
           mkdir -p ~/.ssh
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" | base64 --decode > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
 
-      # Étape 4 : Ajouter l'hôte EC2 aux known_hosts
-      - name: Add EC2 to known hosts
-        run: ssh-keyscan -H 16.171.18.25 >> ~/.ssh/known_hosts
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
 
-      # Étape 5 : Déploiement sur EC2 (git pull)
-      - name: Deploy to EC2
+      - name: Déployer sur EC2
         run: |
-          ssh -i ~/.ssh/id_rsa ubuntu@16.171.18.25 'cd /home/aviel/AWS-ReactJS && git pull origin main'
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            cd ${{ secrets.WORK_DIR }}
+            git pull origin main
+          
+            docker-compose down
+          
+            echo "🗑 Removing old Docker images..."
+            docker image prune -af
 
-      # Étape 6 : Nettoyage de la clé SSH
-      - name: Clean up SSH key
+            echo "🔨 Rebuilding and restarting containers..."
+            docker-compose build --no-cache
+            docker-compose up -d
+          EOF
+
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          WORK_DIR: ${{ secrets.WORK_DIR }}
+
+
+      - name: Nettoyer le répertoire SSH
         run: rm -rf ~/.ssh
-
-
-
-

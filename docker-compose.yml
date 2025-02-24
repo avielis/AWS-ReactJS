@@ -1,12 +1,13 @@
-version: '3.8'
-
 services:
   react-app:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
-      - "3000:3000"  # Mappe le port 3000 du conteneur au port 3000 de l'hôte
+      - "3000:3000"
     volumes:
-      - .:/app  # Mappe le répertoire local au répertoire /app dans le conteneur
+      - .:/app
+      - /app/node_modules
     environment:
       - NODE_ENV=production
-    command: npm start  # Démarre l'application React avec npm
+    restart: always

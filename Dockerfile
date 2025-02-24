@@ -1,20 +1,28 @@
-# Utilise une image Node.js officielle
-FROM node:14
 
-# Définit le répertoire de travail dans le conteneur
+# Utilisation d'une image Node.js légère
+FROM node:18-alpine
+
+# Définir le répertoire de travail
 WORKDIR /app
 
-# Copie le fichier package.json et package-lock.json dans le conteneur
+# Copier package.json et package-lock.json
 COPY package*.json ./
 
-# Installe les dépendances
+# Installer les dépendances
 RUN npm install
 
-# Copie tout le reste du projet dans le conteneur
+# Copier le reste des fichiers
 COPY . .
 
-# Expose le port 3000 pour l'application React
+# Construire l'application React
+RUN npm run build
+
+# Installer 'serve' pour servir l'application
+RUN npm install -g serve
+
+# Exposer le bon port
 EXPOSE 3000
 
-# Démarre l'application React
+# Lancer l'application en mode production
+#CMD ["serve", "-s", ".", "-l", "3000"]
 CMD ["npm", "start"]
